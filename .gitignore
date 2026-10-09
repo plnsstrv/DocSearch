@@ -218,3 +218,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Data and documents (never commit real files)
+data/
+scans/
+*.pdf
+*.jpg
+*.png
+*.db
+*.sqlite
+
+# Models
+models/
+
+# Secrets
+.env
+
+# Allowed: demo files and README images
+!examples/**
+!docs/images/**
