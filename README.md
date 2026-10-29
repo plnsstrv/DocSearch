@@ -1,46 +1,51 @@
 # DocSearch
-Local document search for scanned PDFs: OCR, LLM-based metadata extraction and hybrid (keyword + semantic) search. Fully offline, documents never leave the server.
 
+Локальный поиск по архиву отсканированных документов: распознавание текста (OCR), полнотекстовый поиск и поиск по смыслу, автоматические карточки документов. Работает полностью офлайн: документы не покидают сервер.
 
+## Задача
 
-Local search over an archive of scanned documents: optical character recognition (OCR), automatic cataloging with a local LLM, and keyword plus semantic search. Runs fully offline: documents never leave the server.
+Практикующий юрист хранит документы дел на бумаге и в PDF-сканах без текстового слоя. Типы документов разные: письма, запросы, ходатайства, претензии, товарные накладные. Нужный документ приходится искать вручную, а запрос может быть любым: фамилия, номер, обрывок фразы или примерный смысл.
 
-## Problem
+Требования заказчика:
+- никакого ручного заполнения карточек документов;
+- одна строка поиска, которая понимает любой запрос;
+- полностью локальная работа: в документах персональные данные клиентов.
 
-A practicing lawyer keeps case documents on paper and as scanned PDFs without a text layer, all in Russian. The documents vary widely: letters, requests, court motions, demand letters, delivery notes. Finding the right document means searching by hand, and the query can be anything: a surname, a number, a fragment of a phrase, or just the gist of the document.
+Полные требования: [docs/requirements.md](docs/requirements.md).
 
-User requirements:
-- no manual data entry for document cards;
-- a single search box that handles any query;
-- fully local processing: the documents contain personal data and confidential client information.
-
-## How it works
+## Как это работает
 
 ```
-Scanned PDF → OCR → text cleanup → LLM extracts metadata → SQLite (full-text index + embeddings) → search page
+PDF-скан → OCR (Tesseract) → очистка текста → SQLite (FTS5 + эмбеддинги) → страница поиска (Streamlit)
+                                           ↘ карточки документов (регулярные выражения + Natasha)
 ```
 
-Status:
-- [x] OCR for scanned PDFs (Tesseract) and quality evaluation
-- [ ] Text cleanup
-- [ ] SQLite database and full-text search (FTS5)
-- [ ] Metadata extraction with a local LLM (document type, date, organizations, summary)
-- [ ] Semantic search (embeddings) and hybrid ranking
-- [ ] Web search interface
-- [ ] Docker packaging for server deployment
+Сервер заказчика — Xeon 2015 года без видеокарты, который одновременно работает файловым сервером. Поэтому карточки извлекаются правилами, а не LLM, а тяжёлая обработка идёт ночью. Локальная LLM остаётся отключаемой опцией.
 
-## Results
+## Статус
 
-Regular documents are recognized with ~99% similarity to the original, even on medium-quality scans. The weak spot is tables on poor scans (64.5% on the test delivery note). Details: [docs/ocr_evaluation.md](docs/ocr_evaluation.md) (in Russian).
+- [x] Требования: user stories, критерии приёмки, нефункциональные требования
+- [x] Распознавание PDF-сканов и оценка качества
+- [ ] Очистка текста
+- [ ] База SQLite и полнотекстовый поиск (FTS5)
+- [ ] Русская морфология и метрика качества поиска (Recall@5)
+- [ ] Страница поиска
+- [ ] Поиск по смыслу (эмбеддинги)
+- [ ] Карточки документов
+- [ ] Docker для установки на сервер
 
-## Privacy
+## Результаты
 
-- All processing runs locally, with no cloud services or external APIs.
-- The repository contains only fictional demo documents (`examples/`). Real documents, OCR output, and the database are excluded via `.gitignore`.
+Обычный текст распознаётся с совпадением 98,7–99,6% с оригиналом даже на сканах среднего качества. Слабое место — таблицы на плохих сканах: 64,5% на тестовой накладной. Подробнее: [docs/ocr_evaluation.md](docs/ocr_evaluation.md).
 
-## Getting started
+## Конфиденциальность
 
-Requires Python 3.13 and Tesseract 5 with Russian language data.
+- Вся обработка локальная, без облачных сервисов и внешних API.
+- В репозитории только вымышленные демо-документы (`examples/`). Реальные документы, результаты распознавания, база и модели закрыты в `.gitignore`.
+
+## Запуск
+
+Нужны Python 3.13 и Tesseract 5 с русским языком. На Windows поставьте Tesseract установщиком UB Mannheim и отметьте русский язык в дополнительных языках; скрипт сам находит стандартный путь установки.
 
 ```bash
 # Windows (PowerShell)
@@ -55,18 +60,23 @@ pip install -r requirements.txt
 python app/ocr.py
 ```
 
-Recognized text is saved to `data/ocr_output/`, and the console shows the similarity to the original for each document.
+Распознанный текст сохраняется в `data/ocr_output/`, в консоли выводится совпадение с оригиналом для каждого документа.
 
-## Project structure
+## Структура
 
 ```
-app/ocr.py              OCR for scanned PDFs and quality evaluation
-docs/                   reports and measurements
-examples/scans/         demo scans (fictional documents)
-examples/ground_truth/  original text of the demo documents, used to evaluate OCR
-data/                   output (not committed)
+app/ocr.py              распознавание PDF-сканов и оценка качества
+docs/requirements.md    требования
+docs/ocr_evaluation.md  замеры качества распознавания
+examples/scans/         демо-сканы (вымышленные документы)
+examples/ground_truth/  исходный текст демо-документов
+data/                   результаты (не попадают в репозиторий)
 ```
 
-## Tech stack
+## Стек
 
-Python, Tesseract OCR, PyMuPDF. Planned: SQLite (FTS5), Ollama, Streamlit, Docker.
+Python, Tesseract, PyMuPDF. Дальше: SQLite FTS5, pymorphy3, Natasha, небольшая модель эмбеддингов, Streamlit, Docker.
+
+## Лицензия
+
+MIT

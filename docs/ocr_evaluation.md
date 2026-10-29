@@ -1,35 +1,34 @@
-# OCR quality evaluation
+# Оценка качества распознавания
 
-A log of OCR quality measurements. New runs are appended at the end, so you can see how the results change over time.
+Журнал замеров качества OCR. Новые замеры добавляются в конец, чтобы было видно, как меняется результат.
 
-## Method
+## Методика
 
-**Test set:** 4 fictional documents of different types with simulated scan defects (skew, blur, noise, low resolution). The original text of each document is stored in `examples/ground_truth/`.
+**Тестовый набор:** 4 вымышленных документа разных типов с имитацией дефектов сканирования: наклон, размытие, шум, низкое разрешение. Исходный текст каждого документа лежит в `examples/ground_truth/`.
 
-**Metric:** the share of matching characters between the recognized text and the original, after normalizing whitespace and case (`difflib.SequenceMatcher`). The metric is rough, especially for tables; switching to the standard CER (character error rate) is planned.
+**Метрика:** доля совпадающих символов распознанного и исходного текста после нормализации пробелов и регистра (`difflib.SequenceMatcher`). Метрика грубая, особенно для таблиц; запланирован переход на стандартную CER (доля ошибочных символов).
 
-**How to run:** `python app/ocr.py`
+**Запуск:** `python app/ocr.py`
 
-## 2026-10-09: baseline
+## 09.10.2026: базовый замер
 
-Settings: Tesseract 5, languages `rus+eng`, PDF pages rendered at 300 dpi, no image preprocessing.
+Настройки: Tesseract 5, языки `rus+eng`, страницы PDF переводятся в картинки с разрешением 300 dpi, без предобработки изображений.
 
-| Document | Scan quality | Similarity |
+| Документ | Качество скана | Совпадение |
 |---|---|---|
-| Demand letter for payment of a debt | good (~180 dpi) | 99.5% |
-| Motion for a court-ordered expert examination | medium (~150 dpi, skew, noise) | 99.6% |
-| Response to the demand letter | medium (~150 dpi, skew, noise) | 98.7% |
-| Delivery note with a table | poor (~125 dpi, heavy blur and noise, skew) | 64.5% |
+| Претензия об оплате задолженности | хорошее (~180 dpi) | 99,5% |
+| Ходатайство о назначении экспертизы | среднее (~150 dpi, наклон, шум) | 99,6% |
+| Ответ на претензию | среднее (~150 dpi, наклон, шум) | 98,7% |
+| Товарная накладная с таблицей | плохое (~125 dpi, сильное размытие и шум, наклон) | 64,5% |
 
-Observations:
-- Regular text is recognized almost without errors, even on medium-quality scans.
-- On the poor scan, text outside the table is recognized well (company names, tax IDs, document numbers, dates, surnames), but the table content is lost entirely: grid lines and small blurry text get in the way.
-- OCR sometimes substitutes Latin letters for similar-looking Cyrillic ones ("Ha" instead of "На"), which can break exact-match search.
-- Lines in the signature block get reordered, but this does not affect search.
+Выводы:
+- Обычный текст распознаётся почти без ошибок даже на сканах среднего качества.
+- На плохом скане текст вне таблицы распознаётся хорошо (названия организаций, ИНН, номера документов, даты, фамилии), а содержимое таблицы теряется полностью: мешают линии сетки и мелкий размытый шрифт.
+- OCR иногда подставляет латинские буквы вместо похожих русских («Ha» вместо «На»), и это ломает точный поиск.
+- Строки в блоке подписей меняются местами, но на поиск это не влияет.
 
-Next steps:
-- normalize Latin look-alike letters inside Russian words;
-- preprocessing: remove table lines, deskew, binarize;
-- try a Tesseract page segmentation mode suited for tables;
-- send pages where Tesseract has low confidence to a local vision model;
-- switch to the CER metric.
+Следующие шаги:
+- заменять латинские буквы-двойники в русских словах;
+- предобработка: убрать линии таблиц, выровнять наклон, бинаризовать;
+- подобрать режим сегментации страницы Tesseract для таблиц;
+- перейти на метрику CER.
